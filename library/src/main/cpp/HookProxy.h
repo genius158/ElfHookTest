@@ -91,7 +91,7 @@ static void dynamicHookSoTest(const char *filename) {
         // 主动调用一次 libsotest.so so方法
         ((void (*)(void)) Mehthod_So)();
 
-        inlineHookSoTestSo2(Mehthod_So);
+//        inlineHookSoTestSo2(Mehthod_So);
     }
 
 }
@@ -158,7 +158,7 @@ void hookDlOpen(JNIEnv *env) {
         }
     }
 
-    xhook_enable_debug(1);
+    xhook_enable_debug(0);
     xhook_refresh(0);
 }
 
@@ -196,14 +196,12 @@ void registerInlinePthreadCreate(JNIEnv *env) {
 }
 
 
-unsigned long funcSo = NULL;
+static void (*old_so)(void) = NULL;
 
-void (*old_so)() = NULL;
-
-void new_so() {
+static void new_so(void) {
     LOGGER("new_so new_so new_so");
-    LOGGER("old_so %p", old_so);
 //    old_so();
+    return;
 }
 
 //////////////////// start 尝试hook libsotest.so 的 so 方法 基于地址、偏移量 //////////////////////
@@ -214,9 +212,22 @@ void inlineHookSoTestSo(JNIEnv *env) {
 #ifdef __arm__
     unsigned long base = find_database_of("libsotest.so");
     if (base > 0L) {
-        funcSo = base + 0x7048 + 1;
+        void* func = (void*)(base + 0x7048);
 
-        MSHookFunction((void *) funcSo, (void *) new_so, (void **) &old_so);
+        ((void (*)(void)) func)();
+
+//        MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
+
+        LOGGER("registerInlineHook func  %p",func);
+        if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
+                               (uint32_t **) &old_so) != ELE7EN_OK) {
+            LOGGER("registerInlineHook fialed");
+        }
+        inlineHookAll();
+        LOGGER("registerInlineHook inlineHookAll inlineHookAll");
+
+        LOGGER("old_so %p", old_so);
+        LOGGER("new_so %p", new_so);
     }
 
 #else
@@ -230,7 +241,14 @@ void inlineHookSoTestSo2(void *func) {
     LOGGER("inlineHookSoTestSo2 old_so %p", old_so);
 
 #ifdef __arm__
-    MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
+//    MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
+
+
+            if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
+                               (uint32_t **) &old_so) != ELE7EN_OK) {
+            LOGGER("registerInlineHook fialed");
+        }
+        inlineHookAll();
 #else
 #endif
 

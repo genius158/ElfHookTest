@@ -10,7 +10,7 @@ void hook(JNIEnv *env, jobject obj) {
 
     registerInlinePthreadCreate(env);
 
-//    inlineHookSoTestSo(env);
+    inlineHookSoTestSo(env);
 }
 
 static const JNINativeMethod sMethods[] = {
