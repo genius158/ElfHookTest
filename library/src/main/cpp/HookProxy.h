@@ -2,6 +2,7 @@
 #define HOOK_PROXY_H
 
 #include <pthread.h>
+
 #include <xdl.h>
 #include <xhook.h>
 
@@ -204,13 +205,14 @@ static void new_so(void) {
     return;
 }
 
+
 //////////////////// start 尝试hook libsotest.so 的 so 方法 基于地址、偏移量 //////////////////////
 
 void inlineHookSoTestSo(JNIEnv *env) {
     LOGGER("inlineHookSoTestSo  old_so %p", old_so);
 
-#ifdef __arm__
     unsigned long base = find_database_of("libsotest.so");
+#ifdef __arm__
     if (base > 0L) {
         void* func = (void*)(base + 0x7048);
 
@@ -231,6 +233,12 @@ void inlineHookSoTestSo(JNIEnv *env) {
     }
 
 #else
+    if (base > 0L) {
+        void *func = (void *) (base + 0xD040);
+        ((void (*)(void)) func)();
+
+        A64HookFunction((void *) func, (void *) new_so, (void **) &old_so);
+    }
 #endif
 
 }
@@ -241,15 +249,16 @@ void inlineHookSoTestSo2(void *func) {
     LOGGER("inlineHookSoTestSo2 old_so %p", old_so);
 
 #ifdef __arm__
-//    MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
+    //    MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
 
 
-            if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
-                               (uint32_t **) &old_so) != ELE7EN_OK) {
-            LOGGER("registerInlineHook fialed");
-        }
-        inlineHookAll();
+                if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
+                                   (uint32_t **) &old_so) != ELE7EN_OK) {
+                LOGGER("registerInlineHook fialed");
+            }
+            inlineHookAll();
 #else
+    A64HookFunction((void *) func, (void *) new_so, (void **) &old_so);
 #endif
 
 }

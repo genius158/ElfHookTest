@@ -9,7 +9,6 @@ cmake_minimum_required(VERSION 3.4.1)
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror=return-type -Wl,--hash-style=sysv")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -Wno-unused -Wno-gnu-alignof-expression -Wno-missing-field-initializers -std=c++11 -fvisibility=hidden -fexceptions -Wextra -Wno-unused-parameter -Wno-format-security -Wno-unused-local-typedef")
 
@@ -30,9 +29,8 @@ if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
 
             # And64InlineHook
             src/main/inline64/And64InlineHook.cpp
-
     )
-else()
+else ()
     SET(
             # Sets the name of the library.
             PLATFORM_DIFF_CODE
@@ -48,7 +46,7 @@ else()
             src/main/Substrate/SubstratePosixMemory.cpp
 
     )
-endif()
+endif ()
 
 # Source code directories
 add_library(
@@ -102,7 +100,7 @@ target_link_libraries(
         yanhook
 
         # Links the target library to the log library included in the NDK.
-#        -latomic
+        #        -latomic
         ${log-lib}
-#        -lz
+        #        -lz
 )
