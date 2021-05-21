@@ -189,7 +189,7 @@ void registerInlinePthreadCreate(JNIEnv *env) {
 //    inlineHookAll();
 
 #else
-    LOGGER("registerInlinePthreadCreate 64");
+    LOGGER("registerInlinePthreadCreate 64  %d",android_get_device_api_level());
 
     A64HookFunction((void *) pthread_create, (void *) thread_create_proxy,
                     (void **) &thread_create_original);
