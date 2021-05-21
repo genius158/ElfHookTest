@@ -189,7 +189,7 @@ void registerInlinePthreadCreate(JNIEnv *env) {
 //    inlineHookAll();
 
 #else
-    LOGGER("registerInlinePthreadCreate 64  support until api 28");
+    LOGGER("registerInlinePthreadCreate 64");
 
     A64HookFunction((void *) pthread_create, (void *) thread_create_proxy,
                     (void **) &thread_create_original);
@@ -211,7 +211,9 @@ static void new_so(void) {
 void inlineHookSoTestSo(JNIEnv *env) {
     LOGGER("inlineHookSoTestSo  old_so %p", old_so);
 
-    unsigned long base = find_database_of("libsotest.so");
+//    unsigned long base = find_database_of("libsotest.so");
+    unsigned long base = find_database_of2(-1, "libsotest.so");
+
 #ifdef __arm__
     if (base > 0L) {
         void* func = (void*)(base + 0x7048);
