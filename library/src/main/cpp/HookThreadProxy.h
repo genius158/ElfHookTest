@@ -20,12 +20,13 @@ static jclass jclassThread;
 static jmethodID jmethodIdCurrentThread;
 static jmethodID jmethodIdGetStacktrace;
 
+/**
+ * @return 是否执行attach，主动attach的线程需要detach
+ */
 bool getJNIEnv(JNIEnv *&env) {
     LOGGER("getJNIEnv jvm %p", jvm);
     int getEnvStat = jvm->GetEnv((void **) &env, JNI_VERSION_1_6);
-
     LOGGER("getJNIEnv jvm %d", getEnvStat);
-
     if (getEnvStat == JNI_EDETACHED) {
         int status = jvm->AttachCurrentThread(&env, NULL);
         LOGGER("getJNIEnv jvm status %d", status);
@@ -77,7 +78,8 @@ static void *thread_call(void *arg) {
     if (jmethodRecord != NULL) {
         JNIEnv *env;
         bool needDetach = getJNIEnv(env);
-        env->CallStaticVoidMethod(jclassThreadInitStack, jmethodRecord, member->js_stacktrace,
+        env->CallStaticVoidMethod(jclassThreadInitStack, jmethodRecord, env->NewStringUTF(TAG),
+                                  member->js_stacktrace,
                                   env->NewStringUTF(member->native_stack));
         env->DeleteGlobalRef(member->js_stacktrace);
         if (needDetach) {
@@ -163,8 +165,8 @@ void thread_hook(JavaVM *vm) {
     jclassThreadInitStack = (jclass) env->NewGlobalRef(
             env->FindClass("com/yan/hook/ThreadInitStack"));
 
-    jmethodRecord = env->GetStaticMethodID(jclassThreadInitStack, "record",
-                                           "([Ljava/lang/StackTraceElement;Ljava/lang/String;)V");
+    jmethodRecord = env->GetStaticMethodID(jclassThreadInitStack, "record4Jni",
+                                           "(Ljava/lang/String;[Ljava/lang/StackTraceElement;Ljava/lang/String;)V");
 
     jclassThread = (jclass) env->NewGlobalRef(env->FindClass("java/lang/Thread"));
     jmethodIdCurrentThread = (jmethodID) env->GetStaticMethodID(jclassThread, "currentThread",

@@ -38,7 +38,7 @@ void * thread_run(void * arg)
 
     newthid = pthread_self();
     LOGE("thread_call ForkTest.cpp this is a new thread, thread ID = %d\n",(int)arg);
-    sleep(2000);
+    sleep(20000);
     LOGE("thread_call ForkTest.cpp  end end end end end end end end end end");
 
     return NULL;
