@@ -2,15 +2,16 @@
 #include "Logger.h"
 
 #include "HookProxy.h"
-
+#include "HookThreadProxy.h"
 
 
 void hook(JNIEnv *env, jobject obj) {
-    hookDlOpen(env);
 
-    registerInlinePthreadCreate(env);
+//    registerInlinePthreadCreate(env);
 
-    inlineHookSoTestSo(env);
+    LOGGER("fork start -------------------------");
+
+//    exit(0);
 }
 
 static const JNINativeMethod sMethods[] = {
@@ -33,9 +34,36 @@ static int registerNativeImpl(JNIEnv *env) {
         return JNI_TRUE;
     }
 }
+void eeeeee(const char *tag, const char *fmt, ...) {
+    va_list arg;
+    va_start(arg, fmt);
+    char buffer[10];
+    vsnprintf(buffer,10, fmt, arg);
+//    FILE *file = fopen("/test.txt", "w+");
+//    vfprintf(file, fmt, arg);
+    __android_log_print(ANDROID_LOG_ERROR, "TESTTEST", "test %s", buffer);
+
+    va_list cpy;
+    va_copy(cpy,arg);
+//    __android_log_vprint(ANDROID_LOG_ERROR, "TESTTEST", fmt, cpy);
+
+    va_end(cpy);
+
+    va_list arg2;
+    va_start(arg2, fmt);
+//    __android_log_vprint(ANDROID_LOG_ERROR, tag, fmt, arg2);
+    va_end(arg2);
+
+}
 
 JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *res) {
-    JNIEnv *env = NULL;
+    eeeeee("TAG", "%s %d", "sddsfasdfasfafafffaffaasdfasdfasdfasdfasdfasdfasdfasdfasdfasffsdfsdafsadfasdfasdfasdfadsff", 34);
+
+    sample_signal_register();
+
+    thread_hook(vm);
+
+        JNIEnv *env = NULL;
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
@@ -45,5 +73,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *res) {
     } else {
         return JNI_VERSION_1_6;
     }
+//    return JNI_VERSION_1_6;
 }
+
 //**************************************************************************************************

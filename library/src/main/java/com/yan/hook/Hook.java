@@ -1,31 +1,32 @@
 package com.yan.hook;
 
 
-import android.util.Log;
+import androidx.annotation.Keep;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Hook {
 
     static {
-        System.loadLibrary("yanhook");
+        System.loadLibrary("yhook");
     }
 
     static AtomicBoolean sIsRunning = new AtomicBoolean(false);
 
     public static void hook() {
-        if (sIsRunning.compareAndSet(false, true)) {
-            nHook();
-        }
+        nHook();
     }
 
     private static native void nHook();
 
-    public static void printStackTrace() {
-        StackTraceElement[] traceElements = Thread.currentThread().getStackTrace();
-        for (int i = 0; i < traceElements.length; i++) {
-            Log.e("stacktrace", traceElements[i].getMethodName() + "  " + traceElements[i].getLineNumber());
+    @Keep
+    protected static String getStringFromStack(StackTraceElement[] stackTraceElements) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement ste : stackTraceElements) {
+            sb.append(ste.toString()).append("\n");
         }
-
+        return sb.toString();
     }
+
+
 }

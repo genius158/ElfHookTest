@@ -12,7 +12,6 @@
 #include <SubstrateHook.h>
 
 #else
-
 #include <And64InlineHook.hpp>
 
 #endif
@@ -44,27 +43,31 @@ static void *
 static void *(*dlopen_ext_N)(const char *, int, const void *, const void *) = nullptr;
 
 
+static void dynamicHookSoTest(const char *filename);
+
+static void inlineHookSoTestSo2(void *func);
+
+
 static void *dlopen_proxy_O(const char *filename, int flags, const void *caller_addr) {
     void *result = dlopen_origin_O(filename, flags, caller_addr);
     LOGGER("dlopen_proxy_O  %s", filename);
+    dynamicHookSoTest(filename);
     return result;
 }
 
 static void *dlopen_proxy_N(const char *filename, int flags) {
     void *result = dlopen_origin_N(filename, flags);
     LOGGER("dlopen_proxy_N  %s", filename);
+    dynamicHookSoTest(filename);
     return result;
 }
 
 static void *dlopen_proxy(const char *filename, int flags) {
     void *result = dlopen_origin(filename, flags);
     LOGGER("dlopen_proxy  %s", filename);
+    dynamicHookSoTest(filename);
     return result;
 }
-
-static void dynamicHookSoTest(const char *filename);
-
-static void inlineHookSoTestSo2(void *func);
 
 static void *
 android_dlopen_proxy_O(const char *filename,
@@ -73,27 +76,43 @@ android_dlopen_proxy_O(const char *filename,
                        const void *caller_addr) {
     LOGGER("android_dlopen_proxy_O  %s", filename);
     void *result = android_dlopen_origin_O(filename, flags, extinfo, caller_addr);
-
-    if (strstr(filename, "libsotest.so")) {
-        dynamicHookSoTest(filename);
-    }
+    dynamicHookSoTest(filename);
 
     return result;
 }
 
+static pid_t (*old_fork)(void) = NULL;
+
+static pid_t proxy_fork(void) {
+    LOGGER("proxy_fork proxy_fork proxy_fork");
+    return old_fork();
+}
+
+
+static __noreturn void exit_proxy(int __status) {
+    LOGGER("exit_proxy exit_proxy exit_proxy");
+}
+
+static void (*old_exit)(int) = NULL;
+
+
 // 动态HOOK
 static void dynamicHookSoTest(const char *filename) {
-    LOGGER("dynamicHookSoTest dynamicHookSoTest ");
+    LOGGER("dynamicHookSoTest dynamicHookSoTest  %s", filename);
 
-    void *handler = xdl_open(filename);
-    if (handler == NULL)return;
-    void *Mehthod_So = xdl_sym(handler, "_ZN6SoTest2soEv");
-    if (Mehthod_So != NULL) {
-        // 主动调用一次 libsotest.so so方法
-        ((void (*)(void)) Mehthod_So)();
+//    void *handler = xdl_open(filename);
+//    if (handler == NULL)return;
+//    void *Mehthod_So = xdl_sym(handler, "_ZN6SoTest2soEv");
+//    if (Mehthod_So != NULL) {
+    // 主动调用一次 libsotest.so so方法
+//        ((void (*)(void)) Mehthod_So)();
 
 //        inlineHookSoTestSo2(Mehthod_So);
-    }
+//    }
+
+
+
+    xhook_refresh(0);
 
 }
 
@@ -103,6 +122,8 @@ android_dlopen_proxy_N(const char *filename,
                        const void *extinfo) {
     LOGGER("android_dlopen_proxy_N  %s", filename);
     void *result = android_dlopen_origin_N(filename, flags, extinfo);
+    dynamicHookSoTest(filename);
+
     return result;
 }
 
@@ -140,7 +161,16 @@ static const void *sSoLoad[][3] = {
         },
 };
 
-void hookDlOpen(JNIEnv *env) {
+
+//static int (*thread_create_original)(pthread_t *thread_out, pthread_attr_t const *attr,
+//                                     void *(*start_routine)(void *), void *arg) = pthread_create;
+//static int thread_create_proxy(pthread_t *thread_out, pthread_attr_t const *attr,
+//                               void *(*start_routine)(void *), void *arg) {
+//    return thread_create_original(thread_out, attr, start_routine, arg);
+//}
+
+
+void dlopenhook(JNIEnv *env) {
     int api_level = android_get_device_api_level();
     if (api_level >= __ANDROID_API_O__) {
         for (int i = 0; i < sizeof(sSoLoad_O) / sizeof(sSoLoad_O[0]); i++) {
@@ -161,25 +191,39 @@ void hookDlOpen(JNIEnv *env) {
 
     xhook_enable_debug(0);
     xhook_refresh(0);
+
 }
 
+//__noreturn void abort(void);
+static void *abort_proxy(void) {
+    LOGGER(" ing ing ing ing abort_proxy  abort_proxy abort_proxy");
+}
 
-static int (*thread_create_original)(pthread_t *thread_out, pthread_attr_t const *attr,
-                                     void *(*start_routine)(void *), void *arg) = pthread_create;
+static void *(*abort_old)(void) = nullptr;
 
-static int thread_create_proxy(pthread_t *thread_out, pthread_attr_t const *attr,
-                               void *(*start_routine)(void *), void *arg) {
-    LOGGER("thread_create_proxy thread_create_proxy thread_create_proxy");
+void hookAbort() {
+//    if (registerInlineHook((uint32_t) abort, (uint32_t) abort_proxy, nullptr) != ELE7EN_OK) {
+//        LOGGER("registerInlineHook fialed");
+//    }
+//    inlineHookAll();
 
-    return thread_create_original(thread_out, attr, start_routine, arg);
+//    abort();
+//    xhook_register("libart.so", "pthread_create",
+//                   (void *) &thread_create_proxy, (void **) &thread_create);
+
+//    xhook_register("libart.so", "abort",(void *)abort_proxy,(void **)&abort_old);
+    xhook_register(".*\\.so$", "abort", (void *) &abort_proxy, (void **) &abort_old);
+//    xhook_register("libc.so", "abort",(void *)abort_proxy,(void **)&abort_old);
+    xhook_enable_debug(0);
+    xhook_refresh(0);
 }
 
 void registerInlinePthreadCreate(JNIEnv *env) {
 #ifdef __arm__
     LOGGER("registerInlinePthreadCreate __arm__");
 
-    MSHookFunction((void *) pthread_create, (void *) thread_create_proxy,
-                   (void **) &thread_create_original);
+//    MSHookFunction((void *) pthread_create, (void *) thread_create_proxy,
+//                   (void **) &thread_create_original);
 
 //    if(registerInlineHook((uint32_t) pthread_create, (uint32_t) thread_create_proxy,
 //                       (uint32_t **) &thread_create_original)!=ELE7EN_OK){
@@ -189,10 +233,10 @@ void registerInlinePthreadCreate(JNIEnv *env) {
 //    inlineHookAll();
 
 #else
-    LOGGER("registerInlinePthreadCreate 64  %d",android_get_device_api_level());
-
-    A64HookFunction((void *) pthread_create, (void *) thread_create_proxy,
-                    (void **) &thread_create_original);
+//    LOGGER("registerInlinePthreadCreate 64  %d",android_get_device_api_level());
+//
+//    A64HookFunction((void *) pthread_create, (void *) thread_create_proxy,
+//                    (void **) &thread_create_original);
 #endif
 }
 
@@ -208,40 +252,19 @@ static void new_so(void) {
 
 //////////////////// start 尝试hook libsotest.so 的 so 方法 基于地址、偏移量 //////////////////////
 
-void inlineHookSoTestSo(JNIEnv *env) {
-    LOGGER("inlineHookSoTestSo  old_so %p", old_so);
+void inlineHookSoTestSo() {
 
-//    unsigned long base = find_database_of("libsotest.so");
-    unsigned long base = find_database_of2(-1, "libsotest.so");
 
-#ifdef __arm__
-    if (base > 0L) {
-        void* func = (void*)(base + 0x7048);
-
-        ((void (*)(void)) func)();
-
-//        MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
-
-        LOGGER("registerInlineHook func  %p",func);
-        if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
-                               (uint32_t **) &old_so) != ELE7EN_OK) {
-            LOGGER("registerInlineHook fialed");
-        }
-        inlineHookAll();
-        LOGGER("registerInlineHook inlineHookAll inlineHookAll");
-
-        LOGGER("old_so %p", old_so);
-        LOGGER("new_so %p", new_so);
+    LOGGER("inlineHookSoTestSo inlineHookSoTestSo inlineHookSoTestSo");
+    if (registerInlineHook((uint32_t) fork, (uint32_t) proxy_fork,
+                           (uint32_t **) &old_fork) != ELE7EN_OK) {
+        LOGGER("registerInlineHook fialed");
     }
-
-#else
-    if (base > 0L) {
-        void *func = (void *) (base + 0xD040);
-        ((void (*)(void)) func)();
-
-        A64HookFunction((void *) func, (void *) new_so, (void **) &old_so);
+    if (registerInlineHook((uint32_t) exit, (uint32_t) exit_proxy,
+                           (uint32_t **) &old_exit) != ELE7EN_OK) {
+        LOGGER("registerInlineHook fialed");
     }
-#endif
+    inlineHookAll();
 
 }
 //////////////////// end 尝试hook libsotest.so 的 so 方法 //////////////////////
@@ -254,11 +277,6 @@ void inlineHookSoTestSo2(void *func) {
     //    MSHookFunction((void *) func, (void *) new_so, (void **) &old_so);
 
 
-                if (registerInlineHook((uint32_t) func, (uint32_t) new_so,
-                                   (uint32_t **) &old_so) != ELE7EN_OK) {
-                LOGGER("registerInlineHook fialed");
-            }
-            inlineHookAll();
 #else
     A64HookFunction((void *) func, (void *) new_so, (void **) &old_so);
 #endif

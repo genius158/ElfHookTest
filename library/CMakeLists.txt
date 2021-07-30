@@ -9,17 +9,24 @@ cmake_minimum_required(VERSION 3.4.1)
 # or SHARED, and provides the relative paths to its source code.
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Werror=return-type -Wl,--hash-style=sysv")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -Wno-unused -Wno-gnu-alignof-expression -Wno-missing-field-initializers -std=c++11 -fvisibility=hidden -fexceptions -Wextra -Wno-unused-parameter -Wno-format-security -Wno-unused-local-typedef")
+#add_compile_options(
+#        -std=c11
+#        -Weverything
+#        -Wl
+#)
+#add_compile_options(-Oz -flto -ffunction-sections -fdata-sections -fexceptions -frtti)
+#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -O3 -flto -Wl,--exclude-libs,ALL -Wl,--gc-sections -Wl,--no-fatal-warnings")
 
 # Header file directories
 include_directories(
-        ${CMAKE_SOURCE_DIR}/src/main/inline32
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/main/inline32
         ${CMAKE_SOURCE_DIR}/src/main/inline64
         ${CMAKE_SOURCE_DIR}/src/main/Substrate
         ${CMAKE_SOURCE_DIR}/src/main/cpp
         ${CMAKE_SOURCE_DIR}/src/main/xDL
         ${CMAKE_SOURCE_DIR}/src/main/xHook
+        ${CMAKE_SOURCE_DIR}/src/main/xuwind
+        ${CMAKE_SOURCE_DIR}/src/main/xuwind/include
 )
 
 if (${CMAKE_ANDROID_ARCH_ABI} STREQUAL "arm64-v8a")
@@ -51,7 +58,7 @@ endif ()
 # Source code directories
 add_library(
         # Sets the name of the library.
-        yanhook
+        yhook
 
         # Sets the library as a shared library.
         SHARED
@@ -61,6 +68,7 @@ add_library(
 
         src/main/cpp/Hook.cpp
         src/main/cpp/SoTool.c
+#        src/main/cpp/HookThreadProxy2.c
 
         # xDL
         src/main/xDL/xdl.c
@@ -75,6 +83,21 @@ add_library(
         src/main/xhook/xh_log.c
         src/main/xhook/xh_version.c
         src/main/xhook/xhook.c
+
+        #xuwind
+        src/main/xuwind/xu_cfi.c
+        src/main/xuwind/xu_eh.c
+        src/main/xuwind/xu_formatter.c
+        src/main/xuwind/xu_fp_arm64.c
+        src/main/xuwind/xu_fp_unimplemented.c
+        src/main/xuwind/xu_jni.c
+        src/main/xuwind/xu_libbacktrace.c
+        src/main/xuwind/xu_libcorkscrew.c
+        src/main/xuwind/xu_libcxx.c
+        src/main/xuwind/xu_printer.c
+        src/main/xuwind/xu_util.c
+        src/main/xuwind/xunwind.c
+        src/main/xuwind/xunwind_ctor.c
 )
 
 # Searches for a specified prebuilt library and stores the path as a
@@ -95,12 +118,12 @@ find_library(
 # can link multiple libraries, such as libraries you define in this
 # build script, prebuilt third-party libraries, or system libraries.
 
+
 target_link_libraries(
         # Specifies the target library.
-        yanhook
-
+        yhook
         # Links the target library to the log library included in the NDK.
         #        -latomic
         ${log-lib}
-        #        -lz
+
 )
