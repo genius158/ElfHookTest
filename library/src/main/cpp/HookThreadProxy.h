@@ -163,7 +163,7 @@ void thread_hook(JavaVM *vm) {
 
 
     jclassThreadInitStack = (jclass) env->NewGlobalRef(
-            env->FindClass("com/yan/hook/ThreadInitStack"));
+            env->FindClass("com/yan/hook/Thread4StartStack"));
 
     jmethodRecord = env->GetStaticMethodID(jclassThreadInitStack, "record4Jni",
                                            "(Ljava/lang/String;[Ljava/lang/StackTraceElement;Ljava/lang/String;)V");

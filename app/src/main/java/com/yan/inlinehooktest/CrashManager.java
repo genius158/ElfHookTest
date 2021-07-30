@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.pm.PackageManager;
 import android.util.Log;
 
-import com.yan.hook.ThreadInitStack;
+import com.yan.hook.Thread4StartStack;
 
 import org.json.JSONObject;
 
@@ -92,9 +92,9 @@ public class CrashManager {
             debug.createNewFile();
             writer = new FileWriter(debug, false);
             writer.write(new JSONObject(TombstoneParser.parse(logPath, emergency)).put(
-                    "stackstrace", ThreadInitStack.getInitAllStacks()
+                    "stackstrace", Thread4StartStack.getAllStacks()
             ).toString());
-            Log.e("getInitAllStacks", ThreadInitStack.getInitAllStacks());
+            Log.e("getInitAllStacks", Thread4StartStack.getAllStacks());
         } catch (Exception e) {
             Log.d(TAG, "debug failed", e);
         } finally {

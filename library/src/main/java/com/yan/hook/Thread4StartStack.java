@@ -6,9 +6,12 @@ import androidx.annotation.Keep;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+/**
+ * 获取线程被启动是的堆栈
+ */
 
 @Keep
-public class ThreadInitStack {
+public class Thread4StartStack {
 
     private static final WeakHashMap<Thread, StringBuilder> STACK_MAP = new WeakHashMap<>();
 
@@ -20,15 +23,7 @@ public class ThreadInitStack {
     };
 
     @Keep
-    public static String getInitStack() {
-        StringBuilder sb = STACK_LOCAL.get();
-        if (sb == null) return "";
-
-        return sb.toString();
-    }
-
-    @Keep
-    public static String getInitAllStacks() {
+    public static String getAllStacks() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Thread, StringBuilder> entry : STACK_MAP.entrySet()) {
             Thread thread;
@@ -54,7 +49,7 @@ public class ThreadInitStack {
             index++;
             if (index == 1 && "dalvik.system.VMStack".equals(ste.getClassName())) {
                 continue;
-            } else if (index == 2 && "java.lang.Thread".equals(ste.getClassName()) && "getStackTrace".equals(ste.getMethodName())) {
+            } else if (index == 2 && Thread.class.getCanonicalName().equals(ste.getClassName()) && "getStackTrace".equals(ste.getMethodName())) {
                 continue;
             }
             sb.append(ste.toString()).append("\n");
