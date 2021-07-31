@@ -91,10 +91,11 @@ public class CrashManager {
             if (!debug.getParentFile().exists()) debug.getParentFile().mkdirs();
             debug.createNewFile();
             writer = new FileWriter(debug, false);
-            writer.write(new JSONObject(TombstoneParser.parse(logPath, emergency)).put(
-                    "stackstrace", Thread4StartStack.getAllStacks()
-            ).toString());
-            Log.e("getInitAllStacks", Thread4StartStack.getAllStacks());
+            JSONObject stackJson = new JSONObject(TombstoneParser.parse(logPath, emergency))
+                    .put("stackstrace", Thread4StartStack.getAllStacks());
+
+            writer.write(stackJson.toString());
+            Log.e("getInitAllStacks", stackJson.toString());
         } catch (Exception e) {
             Log.d(TAG, "debug failed", e);
         } finally {

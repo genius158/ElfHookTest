@@ -15,7 +15,7 @@ public class Thread4StartStack {
 
     private static final WeakHashMap<Thread, StringBuilder> STACK_MAP = new WeakHashMap<>();
 
-    private static ThreadLocal<StringBuilder> STACK_LOCAL = new ThreadLocal<StringBuilder>() {
+    private final static ThreadLocal<StringBuilder> STACK_LOCAL = new ThreadLocal<StringBuilder>() {
         @Override
         protected StringBuilder initialValue() {
             return new StringBuilder();

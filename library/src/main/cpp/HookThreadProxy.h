@@ -12,30 +12,37 @@
 #include <stdio.h>
 #include <string.h>
 
+#define GET_JNI_ENV_STATUS_NORMAL 0
+#define GET_JNI_ENV_STATUS_NEED_DETACH -2
+#define GET_JNI_ENV_STATUS_ERROR -3
+
 JavaVM *jvm;
 
-static jclass jclassThreadInitStack;
+static jclass jclassThread4StartStack;
 static jmethodID jmethodRecord;
 static jclass jclassThread;
 static jmethodID jmethodIdCurrentThread;
 static jmethodID jmethodIdGetStacktrace;
 
 /**
- * @return 是否执行attach，主动attach的线程需要detach
+ * @return 0 Normal -2 线程需要detach -3 其他
  */
-bool getJNIEnv(JNIEnv *&env) {
-    LOGGER("getJNIEnv jvm %p", jvm);
+int getJNIEnv(JNIEnv *&env) {
     int getEnvStat = jvm->GetEnv((void **) &env, JNI_VERSION_1_6);
     LOGGER("getJNIEnv jvm %d", getEnvStat);
     if (getEnvStat == JNI_EDETACHED) {
         int status = jvm->AttachCurrentThread(&env, NULL);
         LOGGER("getJNIEnv jvm status %d", status);
-        return true;
+        if (status == 0) {
+            return GET_JNI_ENV_STATUS_NEED_DETACH;
+        } else {
+            return GET_JNI_ENV_STATUS_ERROR;
+        }
 
     } else if (getEnvStat == JNI_OK) {
-    } else if (getEnvStat == JNI_EVERSION) {
+        return GET_JNI_ENV_STATUS_NORMAL;
     }
-    return false;
+    return GET_JNI_ENV_STATUS_ERROR;
 }
 
 
@@ -73,21 +80,24 @@ static void *thread_call(void *arg) {
     struct ThreadCall_Args *member = (struct ThreadCall_Args *) arg;
     char name[32];
     prctl(PR_GET_NAME, name);
-    LOGGER("thread_call START ------------ %d  name:%s", gettid(), name);
 
-    if (jmethodRecord != NULL) {
+    if (jmethodRecord != NULL && jclassThread4StartStack != NULL && jmethodRecord != NULL) {
         JNIEnv *env;
-        bool needDetach = getJNIEnv(env);
-        env->CallStaticVoidMethod(jclassThreadInitStack, jmethodRecord, env->NewStringUTF(TAG),
-                                  member->js_stacktrace,
-                                  env->NewStringUTF(member->native_stack));
-        env->DeleteGlobalRef(member->js_stacktrace);
-        if (needDetach) {
+        int status = getJNIEnv(env);
+        if (status != GET_JNI_ENV_STATUS_ERROR){
+            env->CallStaticVoidMethod(jclassThread4StartStack, jmethodRecord, env->NewStringUTF(TAG),
+                                      member->js_stacktrace,
+                                      env->NewStringUTF(member->native_stack));
+            env->DeleteGlobalRef(member->js_stacktrace);
+        }
+
+        if (status == GET_JNI_ENV_STATUS_NEED_DETACH) {
             jvm->DetachCurrentThread();
         }
     }
 
 // 直接打印
+//    LOGGER("thread_call START ------------ %d  name:%s", gettid(), name);
 //    log(member->native_stack);
 //    LOGGER("thread_call  \n\n\n\n END");
 
@@ -105,18 +115,20 @@ static void logJavaStack(ThreadCall_Args *args) {
         LOGGER("thread_call java %s", args->txt_stacktrace);
     } else {
         JNIEnv *env;
-        bool needDetach = getJNIEnv(env);
-        jobject data = env->CallStaticObjectMethod(printer, methodGetStack, args->js_stacktrace);
-        jboolean jFalse = true;
-        const char *stackData = env->GetStringUTFChars(static_cast<jstring>(data), &jFalse);
-        env->DeleteGlobalRef(args->js_stacktrace);
+        int status = getJNIEnv(env);
+        if (status != GET_JNI_ENV_STATUS_ERROR){
+            jobject data = env->CallStaticObjectMethod(printer, methodGetStack, args->js_stacktrace);
+            jboolean jFalse = true;
+            const char *stackData = env->GetStringUTFChars(static_cast<jstring>(data), &jFalse);
+            env->DeleteGlobalRef(args->js_stacktrace);
 
-        char *pc = new char[4096];
-        strcpy(pc, stackData);
-        args->txt_stacktrace = pc;
-        LOGGER("thread_call java ---------------------------------- ");
-        LOGGER("thread_call java %s", stackData);
-        if (needDetach) {
+            char *pc = new char[4096];
+            strcpy(pc, stackData);
+            args->txt_stacktrace = pc;
+            LOGGER("thread_call java ---------------------------------- ");
+            LOGGER("thread_call java %s", stackData);
+        }
+        if (status == GET_JNI_ENV_STATUS_NEED_DETACH) {
             jvm->DetachCurrentThread();
         }
     }
@@ -137,15 +149,16 @@ static int thread_create_proxy(pthread_t *thread_out, pthread_attr_t const *attr
     member->txt_stacktrace = NULL;
 
     JNIEnv *env;
-    bool needDetach = getJNIEnv(env);
-
-    jobject jcurrentThread = env->CallStaticObjectMethod(jclassThread, jmethodIdCurrentThread);
-    LOGGER("thread_call 11111 ");
-    jobject jstacktrace = env->CallObjectMethod(jcurrentThread,
-                                                jmethodIdGetStacktrace);
-    LOGGER("thread_call ppppppp %p", jstacktrace);
-    member->js_stacktrace = env->NewGlobalRef(jstacktrace);
-    if (needDetach) {
+    int status = getJNIEnv(env);
+    if (status != GET_JNI_ENV_STATUS_ERROR) {
+        jobject jcurrentThread = env->CallStaticObjectMethod(jclassThread, jmethodIdCurrentThread);
+        LOGGER("thread_call 11111 ");
+        jobject jstacktrace = env->CallObjectMethod(jcurrentThread,
+                                                    jmethodIdGetStacktrace);
+        LOGGER("thread_call ppppppp %p", jstacktrace);
+        member->js_stacktrace = env->NewGlobalRef(jstacktrace);
+    }
+    if (status == GET_JNI_ENV_STATUS_NEED_DETACH) {
         jvm->DetachCurrentThread();
     }
     return thread_create_original(thread_out, attr, thread_call, member);
@@ -162,10 +175,10 @@ void thread_hook(JavaVM *vm) {
                                             "([Ljava/lang/Object;)Ljava/lang/String;");
 
 
-    jclassThreadInitStack = (jclass) env->NewGlobalRef(
+    jclassThread4StartStack = (jclass) env->NewGlobalRef(
             env->FindClass("com/yan/hook/Thread4StartStack"));
 
-    jmethodRecord = env->GetStaticMethodID(jclassThreadInitStack, "record4Jni",
+    jmethodRecord = env->GetStaticMethodID(jclassThread4StartStack, "record4Jni",
                                            "(Ljava/lang/String;[Ljava/lang/StackTraceElement;Ljava/lang/String;)V");
 
     jclassThread = (jclass) env->NewGlobalRef(env->FindClass("java/lang/Thread"));
