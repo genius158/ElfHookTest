@@ -10,8 +10,8 @@ cmake_minimum_required(VERSION 3.4.1)
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
-add_compile_options(-Oz -flto -ffunction-sections -fdata-sections -fexceptions -frtti)
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -O3 -flto -Wl,--exclude-libs,ALL -Wl,--gc-sections -Wl,--no-fatal-warnings")
+#add_compile_options(-Oz -flto -ffunction-sections -fdata-sections -fexceptions -frtti)
+#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -O3 -flto -Wl,--exclude-libs,ALL -Wl,--gc-sections -Wl,--no-fatal-warnings")
 
 # Header file directories
 include_directories(

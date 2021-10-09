@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity {
         Hook.hook();
 
         WebView web = findViewById(R.id.web);
-        web.loadUrl("https://baidu.com");
+//        web.loadUrl("https://baidu.com");
 
         new Thread(new Runnable() {
             @Override
@@ -41,7 +41,6 @@ public class MainActivity extends AppCompatActivity {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                Integer.parseInt("sdfas");
             }
         }).start();
     }
