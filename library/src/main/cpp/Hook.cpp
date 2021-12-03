@@ -4,6 +4,7 @@
 #include "HookProxy.h"
 #include "HookThreadProxy.h"
 #include "InlineHookLooper.h"
+#include "DlsymTest.h"
 
 class Test {
 public:
@@ -98,7 +99,9 @@ JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void *res) {
 
     sample_signal_register();
 
-    thread_hook(vm);
+//    thread_hook(vm);
+
+    Dlsym();
 
     JNIEnv *env = NULL;
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {

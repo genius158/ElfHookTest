@@ -50,4 +50,6 @@ dependencies {
 //    implementation project(":jscore-v8")
 
     implementation 'io.hexhacking.xcrash:xcrash-android-lib:3.0.0'
+
+    implementation project(":SoTest")
 }

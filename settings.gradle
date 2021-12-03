@@ -1,3 +1,4 @@
+include ':SoTest'
 include ':library'
 include ':app'
 rootProject.name = "InlineHookTest"

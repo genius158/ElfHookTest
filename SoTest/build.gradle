@@ -22,19 +22,13 @@ android {
     ndkVersion "21.4.7075529"
     externalNativeBuild {
         cmake {
-            path 'CMakeLists.txt'
+            path 'src/main/jni/CMakeLists.txt'
         }
     }
 
-    sourceSets {
-        main {
-            jniLibs.srcDirs = ['libs']
-        }
-    }
 }
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.annotation:annotation:1.2.0'
-
 }
