@@ -60,10 +60,10 @@ static int registerNativeImpl(JNIEnv *env) {
 
 
     if (env->RegisterNatives(clazz, sMethods, sizeof(sMethods) / sizeof(sMethods[0])) < 0) {
-        hook4Looper();
+//        hook4Looper();
         return JNI_FALSE;
     } else {
-        hook4Looper();
+//        hook4Looper();
         return JNI_TRUE;
     }
 

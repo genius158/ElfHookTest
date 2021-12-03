@@ -6,7 +6,7 @@ package com.yan.sotest;
  */
 public class SoTest {
     static {
-        System.loadLibrary("sotest");
+        System.loadLibrary("sotest2");
     }
 
     public static native void so();
