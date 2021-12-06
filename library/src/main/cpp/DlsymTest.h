@@ -42,8 +42,37 @@ struct DlsymTest {
     int test;
 };
 
+class DlsymTest2 {
+private:
+    int left;
+    int top;
+public:
+    void print(){
+        LOGGER(" ing ing ing ing abort_proxy  abort_proxy abort_proxy %d",bottom);
+    }
+    int right;
+    int bottom;
+
+    int test;
+
+
+
+};
+
 
 void Dlsym() {
+
+
+    DlsymTest *dt1 = new DlsymTest();
+    dt1->left=1;
+    dt1->right=11;
+    dt1->top=111;
+    dt1->bottom=1111;
+    dt1->test=11111;
+
+    DlsymTest2 *dt2 = reinterpret_cast<DlsymTest2*>(dt1);
+    dt2->print();
+
     //ArchivePathEntry: pathPrefix="", path="/lib/armeabi-v7a/libdlsymtest.so"
     void *handle = xdl_open("libdlsymtest.so");
 
@@ -53,6 +82,7 @@ void Dlsym() {
     //000074fc T _ZN9DlsymTest9PrintTestEv DlsymTest::PrintTest()
     //000074cc T _ZN9DlsymTestC1Ev
     //000074cc T _ZN9DlsymTestC2Ev
+
 
 
 
